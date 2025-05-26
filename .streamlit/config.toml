@@ -1,8 +1,9 @@
 [theme]
-primaryColor = "#1DB954"
-backgroundColor = "#f0f2f6"
-secondaryBackgroundColor = "#ffffff"
-textColor = "#000000"
+base = "dark"
+primaryColor = "#1DB954"  # Verde vibrante (tipo Spotify)
+backgroundColor = "#0E1117"  # Preto grafite
+secondaryBackgroundColor = "#1E222A"  # Cinza escuro para painéis e cards
+textColor = "#FFFFFF"  # Texto branco puro
 font = "sans serif"
 
 [server]
