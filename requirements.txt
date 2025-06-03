@@ -1,4 +1,1 @@
-streamlit==1.45.1
-pandas
-python-dotenv
-streamlit-extras==0.7.1
+streamlit
