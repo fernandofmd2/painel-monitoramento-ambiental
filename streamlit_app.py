@@ -6,19 +6,6 @@ from app.alarm_config import load_limits, save_limits
 import time
 from datetime import datetime
 import pytz
-import streamlit.components.v1 as components
-
-# Autoatualização a cada 10 minutos sem perder o scroll
-components.html("""
-    <script>
-        setTimeout(() => {
-            location.reload();
-        }, 600000);  // 600000 ms = 10 minutos
-    </script>
-""", height=0)
-
-st.set_page_config(layout="wide")
-set_style()
 
 st.markdown("""
     <style>
