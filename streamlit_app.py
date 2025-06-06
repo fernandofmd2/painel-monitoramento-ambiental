@@ -28,13 +28,14 @@ if "alarm_limits" not in st.session_state:
 if "last_refresh_time" not in st.session_state:
     st.session_state.last_refresh_time = time.time()
 
-if "station_data" not in st.session_state:
-    st.session_state.station_data = {}
 
-if "manual_reload" not in st.session_state:
-    st.session_state.manual_reload = False
+# Autoatualização a cada 5 minutos (300s)
+if time.time() - st.session_state.last_refresh_time >= 300:
+    st.session_state.last_refresh_time = time.time()
+    st.rerun()
 
 # Cabeçalho com menu, título e botão atualizar
+
 menu_col, title_col, update_col = st.columns([1, 5, 1])
 
 with menu_col:
@@ -46,7 +47,8 @@ with title_col:
 
 with update_col:
     if st.button("🔄 Atualizar agora"):
-        st.session_state.manual_reload = True
+        st.session_state.last_refresh_time = time.time()
+        st.rerun()
 
 # Exibe última atualização (com fuso horário corrigido)
 tz = pytz.timezone("America/Sao_Paulo")
@@ -71,25 +73,14 @@ if st.session_state.show_sidebar:
 
 limits = st.session_state.alarm_limits
 
+# Sempre recarrega dados do FTP
 def load_station_data(station_key):
-    now = time.time()
-    elapsed = now - st.session_state.last_refresh_time
-
-    if station_key not in st.session_state.station_data:
-        st.session_state.station_data[station_key] = {}
-
-    if elapsed >= 300 or st.session_state.manual_reload:
-        path, filename = download_latest_file(station_key)
-        if not path:
-            return {}, "", ""
-        data = parse_lsi_file(path, station_key)
-        timestamp = filename.replace("..lsi", "").replace("_", "/", 1).replace("_", ":", 1)
-        st.session_state.station_data[station_key] = {"data": data, "filename": filename, "timestamp": timestamp}
-        st.session_state.last_refresh_time = now
-        st.session_state.manual_reload = False
-
-    cache = st.session_state.station_data[station_key]
-    return cache.get("data", {}), cache.get("filename", ""), cache.get("timestamp", "")
+    path, filename = download_latest_file(station_key)
+    if not path:
+        return {}, "", ""
+    data = parse_lsi_file(path, station_key)
+    timestamp = filename.replace("..lsi", "").replace("_", "/", 1).replace("_", ":", 1)
+    return data, filename, timestamp
 
 gases_particulas = ["O3", "CO", "SO2", "NO", "NO2", "NOX", "PM10"]
 meteorologicos = ["Temperatura", "Umidade Relativa", "Pressão Atmosférica",
@@ -143,6 +134,7 @@ def render_station(station_key, emoji, name, col):
                             </div>
                         """, unsafe_allow_html=True)
 
+# Render das estações
 render_station("fazenda", "", "Fazenda", col1)
 with col_div:
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
