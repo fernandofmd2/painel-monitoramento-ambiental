@@ -22,7 +22,7 @@ st.markdown("""
 if "show_sidebar" not in st.session_state:
     st.session_state.show_sidebar = False
 
-if "alarm_limits" not in st.session_state:a
+if "alarm_limits" not in st.session_state:
     st.session_state.alarm_limits = load_limits()
 
 if "last_refresh_time" not in st.session_state:
