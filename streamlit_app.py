@@ -94,7 +94,7 @@ def render_station(station_key, emoji, name, col):
         col_gas, col_met = st.columns(2)
 
         with col_gas:
-            st.subheader("Gases e Partículas")
+            st.subheader("🧪 Gases e Partículas")
             for label in gases_particulas:
                 if label in data:
                     value = data[label]
@@ -111,7 +111,7 @@ def render_station(station_key, emoji, name, col):
                         """, unsafe_allow_html=True)
 
         with col_met:
-            st.subheader("Variáveis Meteorológicas")
+            st.subheader("🌡️ Variáveis Meteorológicas")
             for label in meteorologicos:
                 if label in data:
                     value = data[label]
@@ -128,7 +128,7 @@ def render_station(station_key, emoji, name, col):
                         """, unsafe_allow_html=True)
 
 # Render das estações
-render_station("fazenda", "Fazenda", col1)
+render_station("fazenda", "", "Fazenda", col1)
 with col_div:
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-render_station("coca_cola", "Coca Cola", col2)
+render_station("coca_cola", "", "Coca Cola", col2)
