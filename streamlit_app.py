@@ -28,7 +28,14 @@ if "alarm_limits" not in st.session_state:
 if "last_refresh_time" not in st.session_state:
     st.session_state.last_refresh_time = time.time()
 
+
+# Autoatualização a cada 5 minutos (300s)
+if time.time() - st.session_state.last_refresh_time >= 300:
+    st.session_state.last_refresh_time = time.time()
+    st.rerun()
+
 # Cabeçalho com menu, título e botão atualizar
+
 menu_col, title_col, update_col = st.columns([1, 5, 1])
 
 with menu_col:
@@ -94,7 +101,7 @@ def render_station(station_key, emoji, name, col):
         col_gas, col_met = st.columns(2)
 
         with col_gas:
-            st.subheader("🧪 Gases e Partículas")
+            st.subheader("Gases e Partículas")
             for label in gases_particulas:
                 if label in data:
                     value = data[label]
@@ -111,7 +118,7 @@ def render_station(station_key, emoji, name, col):
                         """, unsafe_allow_html=True)
 
         with col_met:
-            st.subheader("🌡️ Variáveis Meteorológicas")
+            st.subheader("Variáveis Meteorológicas")
             for label in meteorologicos:
                 if label in data:
                     value = data[label]
