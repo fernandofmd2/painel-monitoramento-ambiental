@@ -6,18 +6,13 @@ from app.alarm_config import load_limits, save_limits
 import time
 from datetime import datetime
 import pytz
+from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(layout="wide")
 set_style()
 
-# JS para forçar reload completo a cada 5 minutos
-st.markdown("""
-    <script>
-    setTimeout(function(){
-        window.location.reload();
-    }, 300000);  // 5 minutos em milissegundos
-    </script>
-""", unsafe_allow_html=True)
+# Atualização automática a cada 5 minutos (300000 ms)
+st_autorefresh(interval=300000, key="auto_refresh")
 
 st.markdown("""
     <style>
