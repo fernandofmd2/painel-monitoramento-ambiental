@@ -28,14 +28,12 @@ if "alarm_limits" not in st.session_state:
 if "last_refresh_time" not in st.session_state:
     st.session_state.last_refresh_time = time.time()
 
-
 # Autoatualização a cada 5 minutos (300s)
 if time.time() - st.session_state.last_refresh_time >= 300:
     st.session_state.last_refresh_time = time.time()
-    st.rerun()
+    st.experimental_rerun()
 
 # Cabeçalho com menu, título e botão atualizar
-
 menu_col, title_col, update_col = st.columns([1, 5, 1])
 
 with menu_col:
@@ -48,7 +46,7 @@ with title_col:
 with update_col:
     if st.button("🔄 Atualizar agora"):
         st.session_state.last_refresh_time = time.time()
-        st.rerun()
+        st.experimental_rerun()
 
 # Exibe última atualização (com fuso horário corrigido)
 tz = pytz.timezone("America/Sao_Paulo")
