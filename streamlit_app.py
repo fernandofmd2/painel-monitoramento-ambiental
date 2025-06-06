@@ -7,6 +7,9 @@ import time
 from datetime import datetime
 import pytz
 
+st.set_page_config(layout="wide")
+set_style()
+
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
@@ -19,7 +22,7 @@ st.markdown("""
 if "show_sidebar" not in st.session_state:
     st.session_state.show_sidebar = False
 
-if "alarm_limits" not in st.session_state:
+if "alarm_limits" not in st.session_state:a
     st.session_state.alarm_limits = load_limits()
 
 if "last_refresh_time" not in st.session_state:
