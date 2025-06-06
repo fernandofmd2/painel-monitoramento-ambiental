@@ -10,6 +10,15 @@ import pytz
 st.set_page_config(layout="wide")
 set_style()
 
+# JS para forçar reload completo a cada 5 minutos
+st.markdown("""
+    <script>
+    setTimeout(function(){
+        window.location.reload();
+    }, 300000);  // 5 minutos em milissegundos
+    </script>
+""", unsafe_allow_html=True)
+
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
@@ -28,14 +37,7 @@ if "alarm_limits" not in st.session_state:
 if "last_refresh_time" not in st.session_state:
     st.session_state.last_refresh_time = time.time()
 
-
-# Autoatualização a cada 5 minutos (300s)
-if time.time() - st.session_state.last_refresh_time >= 300:
-    st.session_state.last_refresh_time = time.time()
-    st.rerun()
-
 # Cabeçalho com menu, título e botão atualizar
-
 menu_col, title_col, update_col = st.columns([1, 5, 1])
 
 with menu_col:
