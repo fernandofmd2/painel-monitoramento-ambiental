@@ -1,70 +1,61 @@
-/* Oculta menu e rodapé padrão do Streamlit */
-#MainMenu {
-    visibility: hidden;
-}
-footer {
-    visibility: hidden;
-}
-header {
-    visibility: hidden;
-}
+import streamlit as st
 
-/* Título principal */
-.title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    text-align: center;
-    color: #ffffff;
-    margin-bottom: 1rem;
-}
-
-/* Títulos das estações */
-.station-title {
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: #ffffff;
-    text-align: center;
-    margin-bottom: 1rem;
-}
-
-/* Divisória entre colunas */
-.divider {
-    height: 100%;
-    width: 3px;
-    background-color: #777;
-    margin: auto;
-}
-
-/* Estilo das caixas de métricas */
-.metric-box {
-    padding: 0.5rem;
-    border-radius: 0.5rem;
-    margin-bottom: 1rem;
-    background-color: #1e1e1e;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-}
-
-.metric-label {
-    font-size: 1rem;
-    color: #cccccc;
-}
-
-.metric-value {
-    font-size: 1.6rem;
-    font-weight: bold;
-    color: #ffffff;
-}
-
-.alerta {
-    border: 2px solid red;
-    background-color: #2e0000;
-}
-
-.normal {
-    border: 2px solid #00cc66;
-}
-
-/* Ajusta padding superior para conteúdo iniciar mais próximo do topo */
-.block-container {
-    padding-top: 1rem !important;
-}
+def set_style():
+    st.markdown("""
+        <style>
+        body {
+            background-color: #121212;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .main {
+            padding: 2rem;
+        }
+        .title {
+            font-size: 42px;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .station-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: white;
+            margin: 20px 0 15px;
+            text-align: center;
+        }
+        .metric-box {
+            border-radius: 8px;
+            padding: 6px 14px;
+            margin-bottom: 6px;
+            box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .metric-box.normal {
+            background-color: #28a745;
+        }
+        .metric-box.alerta {
+            background-color: #ff0000;
+            animation: pulse 1s infinite;
+        }
+        .metric-label {
+            font-weight: bold;
+            font-size: 17px;
+            color: white;
+        }
+        .metric-value {
+            font-size: 26px;
+            color: white;
+        }
+        .divider {
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+            height: 100%;
+            margin: 0 10px;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        </style>
+    """, unsafe_allow_html=True)
