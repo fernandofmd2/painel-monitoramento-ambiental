@@ -9,13 +9,24 @@ header {
     visibility: hidden;
 }
 
-/* Título principal */
+/* Título principal colado no topo */
 .title {
     font-size: 2.5rem;
     font-weight: 700;
     text-align: center;
     color: #ffffff;
     margin-bottom: 1rem;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding-top: 0.5rem;
+    z-index: 10;
+}
+
+/* Espaçador para empurrar o conteúdo abaixo do título absoluto */
+.title-spacer {
+    height: 4rem;
 }
 
 /* Títulos das estações */
@@ -64,28 +75,12 @@ header {
     border: 2px solid #00cc66;
 }
 
-/* Remove o espaçamento superior da página inteira */
-.block-container {
-    padding-top: 0rem !important;
-    margin-top: 0rem !important;
-}
-
-.css-18e3th9 {
-    padding-top: 0rem !important;
-    margin-top: 0rem !important;
-}
-
-.css-1v0mbdj {
-    padding-top: 0rem !important;
-    margin-top: 0rem !important;
-}
-/* Força o layout a colar no topo de verdade */
+/* Remove espaços extras no topo do layout do Streamlit */
 html, body, .main, .block-container {
     padding-top: 0 !important;
     margin-top: 0 !important;
 }
 
-/* Remove qualquer espaço gerado por contêineres padrão do Streamlit */
 .css-18e3th9, .css-1v0mbdj, .css-10trblm {
     padding-top: 0 !important;
     margin-top: 0 !important;
