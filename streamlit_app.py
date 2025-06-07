@@ -36,7 +36,7 @@ if "last_refresh_time" not in st.session_state:
 # Atualização automática a cada 5 minutos
 if time.time() - st.session_state.last_refresh_time > 300:
     st.session_state.last_refresh_time = time.time()
-    st.experimental_rerun()
+    st.rerun()
 
 # Cabeçalho
 menu_col, spacer_col, update_col = st.columns([1, 5, 1])
@@ -48,7 +48,7 @@ with menu_col:
 with update_col:
     if st.button("🔄 Atualizar agora"):
         st.session_state.last_refresh_time = time.time()
-        st.experimental_rerun()
+        st.rerun()
 
 # Horário formatado
 tz = pytz.timezone("America/Sao_Paulo")
