@@ -9,22 +9,28 @@ header {
     visibility: hidden;
 }
 
-/* Título principal colado no topo */
+/* TÍTULO FIXO NO TOPO */
 .title {
-    font-size: 2.5rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: #0e1117;
+    font-size: 2.3rem;
     font-weight: 700;
+    color: white;
+    padding: 0.5rem;
     text-align: center;
-    color: #ffffff;
-    margin-top: -9rem !important; /* Reduz espaço visível acima */
-    margin-bottom: 1rem;
+    z-index: 9999;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.6);
 }
 
-/* Espaçador para empurrar o conteúdo abaixo do título absoluto */
+/* Espaço visual para não sobrepor os dados */
 .title-spacer {
-    height: 4rem;
+    height: 4.5rem;
 }
 
-/* Títulos das estações */
+/* Título das estações */
 .station-title {
     font-size: 1.8rem;
     font-weight: bold;
@@ -33,7 +39,7 @@ header {
     margin-bottom: 1rem;
 }
 
-/* Divisória entre colunas */
+/* Divisória vertical */
 .divider {
     height: 100%;
     width: 3px;
@@ -70,7 +76,7 @@ header {
     border: 2px solid #00cc66;
 }
 
-/* Remove espaços extras no topo do layout do Streamlit */
+/* Remove margens do layout padrão do Streamlit */
 html, body, .main, .block-container {
     padding-top: 0 !important;
     margin-top: 0 !important;
