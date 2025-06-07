@@ -1,0 +1,70 @@
+/* Oculta menu e rodapé padrão do Streamlit */
+#MainMenu {
+    visibility: hidden;
+}
+footer {
+    visibility: hidden;
+}
+header {
+    visibility: hidden;
+}
+
+/* Título principal */
+.title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    color: #ffffff;
+    margin-bottom: 1rem;
+}
+
+/* Títulos das estações */
+.station-title {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+/* Divisória entre colunas */
+.divider {
+    height: 100%;
+    width: 3px;
+    background-color: #777;
+    margin: auto;
+}
+
+/* Estilo das caixas de métricas */
+.metric-box {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    background-color: #1e1e1e;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.metric-label {
+    font-size: 1rem;
+    color: #cccccc;
+}
+
+.metric-value {
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.alerta {
+    border: 2px solid red;
+    background-color: #2e0000;
+}
+
+.normal {
+    border: 2px solid #00cc66;
+}
+
+/* Reduz espaçamento superior da página */
+.block-container {
+    padding-top: 1rem !important;
+}
