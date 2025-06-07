@@ -41,6 +41,7 @@ with menu_col:
 
 with title_col:
     st.markdown("<div class='title'>🌍 Painel de Monitoramento Ambiental</div>", unsafe_allow_html=True)
+    st.markdown("<div class='title-spacer'></div>", unsafe_allow_html=True)
 
 with update_col:
     if st.button("🔄 Atualizar agora"):
