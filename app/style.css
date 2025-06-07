@@ -64,7 +64,18 @@ header {
     border: 2px solid #00cc66;
 }
 
-/* Reduz espaçamento superior da página */
+/* Remove o espaçamento superior da página inteira */
 .block-container {
-    padding-top: 1rem !important;
+    padding-top: 0rem !important;
+    margin-top: 0rem !important;
+}
+
+.css-18e3th9 {
+    padding-top: 0rem !important;
+    margin-top: 0rem !important;
+}
+
+.css-1v0mbdj {
+    padding-top: 0rem !important;
+    margin-top: 0rem !important;
 }
