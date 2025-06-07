@@ -79,3 +79,14 @@ header {
     padding-top: 0rem !important;
     margin-top: 0rem !important;
 }
+/* Força o layout a colar no topo de verdade */
+html, body, .main, .block-container {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+/* Remove qualquer espaço gerado por contêineres padrão do Streamlit */
+.css-18e3th9, .css-1v0mbdj, .css-10trblm {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
