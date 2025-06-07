@@ -15,13 +15,8 @@ header {
     font-weight: 700;
     text-align: center;
     color: #ffffff;
+    margin-top: -4rem !important; /* Reduz espaço visível acima */
     margin-bottom: 1rem;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    padding-top: 0.5rem;
-    z-index: 10;
 }
 
 /* Espaçador para empurrar o conteúdo abaixo do título absoluto */
