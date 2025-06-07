@@ -6,7 +6,6 @@ from app.alarm_config import load_limits, save_limits
 import time
 from datetime import datetime
 import pytz
-from streamlit_extras.app_refresh import st_autorefresh
 
 st.set_page_config(layout="wide")
 set_style()
@@ -15,6 +14,7 @@ set_style()
 st.markdown("<div class='title'>🌍 Painel de Monitoramento Ambiental</div>", unsafe_allow_html=True)
 st.markdown("<div class='title-spacer'></div>", unsafe_allow_html=True)
 
+# Oculta menu e rodapé
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
@@ -23,7 +23,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Inicialização de sessão
+# Sessão
 if "show_sidebar" not in st.session_state:
     st.session_state.show_sidebar = False
 
@@ -33,10 +33,12 @@ if "alarm_limits" not in st.session_state:
 if "last_refresh_time" not in st.session_state:
     st.session_state.last_refresh_time = time.time()
 
-# Autoatualização a cada 5 minutos
-st_autorefresh(interval=5 * 60 * 1000, key="auto_refresh")
+# Atualização automática a cada 5 minutos
+if time.time() - st.session_state.last_refresh_time > 300:
+    st.session_state.last_refresh_time = time.time()
+    st.experimental_rerun()
 
-# Cabeçalho com menu e botão atualizar
+# Cabeçalho
 menu_col, spacer_col, update_col = st.columns([1, 5, 1])
 
 with menu_col:
@@ -46,15 +48,15 @@ with menu_col:
 with update_col:
     if st.button("🔄 Atualizar agora"):
         st.session_state.last_refresh_time = time.time()
-        st.rerun()
+        st.experimental_rerun()
 
-# Última atualização (com fuso horário Brasil)
+# Horário formatado
 tz = pytz.timezone("America/Sao_Paulo")
 local_time = datetime.fromtimestamp(st.session_state.last_refresh_time, tz)
 dt_str = local_time.strftime("%d/%m/%Y %H:%M:%S")
 st.markdown(f"📅 <b>Última atualização:</b> {dt_str}", unsafe_allow_html=True)
 
-# Sidebar de alarmes
+# Sidebar
 if st.session_state.show_sidebar:
     st.sidebar.header("⚙️ Configurar Alarmes")
     limits = st.session_state.alarm_limits
@@ -71,7 +73,7 @@ if st.session_state.show_sidebar:
 
 limits = st.session_state.alarm_limits
 
-# Recarrega dados do FTP
+# FTP
 def load_station_data(station_key):
     path, filename = download_latest_file(station_key)
     if not path:
@@ -81,8 +83,7 @@ def load_station_data(station_key):
     return data, filename, timestamp
 
 gases_particulas = ["O3", "CO", "SO2", "NO", "NO2", "NOX", "PM10"]
-meteorologicos = ["Temperatura", "Umidade Relativa", "Pressão Atmosférica",
-                  "Direção do vento", "Velocidade do vento", "Índice Pluviométrico"]
+meteorologicos = ["Temperatura", "Umidade Relativa", "Pressão Atmosférica", "Direção do vento", "Velocidade do vento", "Índice Pluviométrico"]
 
 col1, col_div, col2 = st.columns([1, 0.02, 1])
 
@@ -132,7 +133,6 @@ def render_station(station_key, emoji, name, col):
                             </div>
                         """, unsafe_allow_html=True)
 
-# Render das estações
 render_station("fazenda", "", "Fazenda", col1)
 with col_div:
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
