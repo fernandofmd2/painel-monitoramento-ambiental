@@ -3,16 +3,17 @@ from app.ftp_handler import download_latest_file
 from app.parser import parse_lsi_file
 from app.style import set_style
 from app.alarm_config import load_limits, save_limits
+import time
 from datetime import datetime
 import pytz
-from streamlit_autorefresh import st_autorefresh
+from streamlit_extras.app_refresh import st_autorefresh
 
-# Configurações iniciais
 st.set_page_config(layout="wide")
 set_style()
 
-# Atualiza a cada 5 minutos (300.000 milissegundos)
-st_autorefresh(interval=300000, key="auto_refresh")
+# TÍTULO FIXO + espaçador
+st.markdown("<div class='title'>🌍 Painel de Monitoramento Ambiental</div>", unsafe_allow_html=True)
+st.markdown("<div class='title-spacer'></div>", unsafe_allow_html=True)
 
 st.markdown("""
     <style>
@@ -29,26 +30,28 @@ if "show_sidebar" not in st.session_state:
 if "alarm_limits" not in st.session_state:
     st.session_state.alarm_limits = load_limits()
 
-# Atualiza sempre o tempo de carregamento (mesmo no auto refresh)
-st.session_state.last_refresh_time = datetime.now(pytz.timezone("America/Sao_Paulo"))
+if "last_refresh_time" not in st.session_state:
+    st.session_state.last_refresh_time = time.time()
 
-# Cabeçalho com menu, título e botão atualizar
-menu_col, title_col, update_col = st.columns([1, 5, 1])
+# Autoatualização a cada 5 minutos
+st_autorefresh(interval=5 * 60 * 1000, key="auto_refresh")
+
+# Cabeçalho com menu e botão atualizar
+menu_col, spacer_col, update_col = st.columns([1, 5, 1])
 
 with menu_col:
     if st.button("☰"):
         st.session_state.show_sidebar = not st.session_state.show_sidebar
 
-with title_col:
-    st.markdown("<div class='title'>🌍 Painel de Monitoramento Ambiental</div>", unsafe_allow_html=True)
-    st.markdown("<div class='title-spacer'></div>", unsafe_allow_html=True)
-
 with update_col:
     if st.button("🔄 Atualizar agora"):
+        st.session_state.last_refresh_time = time.time()
         st.rerun()
 
-# Exibe última atualização
-dt_str = st.session_state.last_refresh_time.strftime("%d/%m/%Y %H:%M:%S")
+# Última atualização (com fuso horário Brasil)
+tz = pytz.timezone("America/Sao_Paulo")
+local_time = datetime.fromtimestamp(st.session_state.last_refresh_time, tz)
+dt_str = local_time.strftime("%d/%m/%Y %H:%M:%S")
 st.markdown(f"📅 <b>Última atualização:</b> {dt_str}", unsafe_allow_html=True)
 
 # Sidebar de alarmes
@@ -68,7 +71,7 @@ if st.session_state.show_sidebar:
 
 limits = st.session_state.alarm_limits
 
-# Sempre recarrega dados do FTP
+# Recarrega dados do FTP
 def load_station_data(station_key):
     path, filename = download_latest_file(station_key)
     if not path:
