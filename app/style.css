@@ -15,7 +15,7 @@ header {
     font-weight: 700;
     text-align: center;
     color: #ffffff;
-    margin-top: -4rem !important; /* Reduz espaço visível acima */
+    margin-top: -9rem !important; /* Reduz espaço visível acima */
     margin-bottom: 1rem;
 }
 
