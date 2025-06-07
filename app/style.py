@@ -59,3 +59,9 @@ def set_style():
         }
         </style>
     """, unsafe_allow_html=True)
+
+/* Reduz espaçamento superior da página */
+.block-container {
+    padding-top: 1rem !important;
+}
+
