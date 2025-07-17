@@ -126,18 +126,18 @@ def render_station(station_key, emoji, name, col):
         # Se timestamp está None ou inválido -> considera atrasado
         if not timestamp:
             st.markdown(f"<div class='station-title'>{emoji} {name}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='alert-card'>Sem novos dados da estação <b>{name}</b></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='alert-card'>Sem novos dados da estação {name}</div>", unsafe_allow_html=True)
             return
 
         # Se está atrasado >30 minutos
         try:
             if now - timestamp > timedelta(minutes=30):
                 st.markdown(f"<div class='station-title'>{emoji} {name}</div>", unsafe_allow_html=True)
-                st.markdown(f"<div class='alert-card'>Sem novos dados da estação <b>{name}</b> há mais de 30 minutos!</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='alert-card'>Sem novos dados da estação {name} há mais de 30 minutos!</div>", unsafe_allow_html=True)
                 return
         except Exception:
             st.markdown(f"<div class='station-title'>{emoji} {name}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='alert-card'>Sem novos dados da estação <b>{name}</b></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='alert-card'>Sem novos dados da estação {name}</div>", unsafe_allow_html=True)
             return
 
         # Se chegou aqui, está atualizado → mostra normalmente
