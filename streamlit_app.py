@@ -60,8 +60,6 @@ STATIONS = {
 }
 
 # Sidebar
-station_limits_state = {}
-
 if st.session_state.show_sidebar:
     st.sidebar.header("⚙️ Configurar Alarmes")
 
@@ -162,7 +160,6 @@ def render_station(station_key, emoji, name, col):
                         </div>
                     """, unsafe_allow_html=True)
 
-# Render
 render_station("fazenda", "", "Estação Fazenda", col1)
 with col_div:
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
