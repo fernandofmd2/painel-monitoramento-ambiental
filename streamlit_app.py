@@ -29,6 +29,7 @@ if "show_sidebar" not in st.session_state:
 if "alarm_limits" not in st.session_state:
     st.session_state.alarm_limits = load_limits()
 
+# Guarda o horário da última atualização (inicializa)
 if "last_refresh_time" not in st.session_state:
     st.session_state.last_refresh_time = time.time()
 
@@ -40,6 +41,7 @@ with menu_col:
         st.session_state.show_sidebar = not st.session_state.show_sidebar
 
 with update_col:
+    # Atualiza manualmente
     if st.button("🔄 Atualizar agora"):
         st.session_state.last_refresh_time = time.time()
         st.rerun()
@@ -67,7 +69,7 @@ if st.session_state.show_sidebar:
 
 limits = st.session_state.alarm_limits
 
-# Recarrega dados do FTP
+# Função que carrega dados do FTP
 def load_station_data(station_key):
     path, filename = download_latest_file(station_key)
     if not path:
@@ -75,22 +77,26 @@ def load_station_data(station_key):
     data = parse_lsi_file(path, station_key)
     return data, filename
 
-# Função para extrair horário do arquivo
+# Função para extrair horário do arquivo .lsi
 def get_file_datetime(filename):
     try:
-        parts = filename.replace("..lsi", "").split("_")  # 17_07_2025_14_11
+        # Exemplo: 17_07_2025_14_11..lsi
+        parts = filename.replace("..lsi", "").split("_")
         day, month, year, hour, minute = parts
         dt = datetime(int(year), int(month), int(day), int(hour), int(minute))
         return dt
     except Exception:
         return None
 
+# Variáveis
 gases_particulas = ["O3", "CO", "SO2", "NO", "NO2", "NOX", "PM10"]
 meteorologicos = ["Temperatura", "Umidade Relativa", "Pressão Atmosférica",
                   "Direção do vento", "Velocidade do vento", "Índice Pluviométrico"]
 
+# Layout em duas colunas
 col1, col_div, col2 = st.columns([1, 0.02, 1])
 
+# Renderização por estação
 def render_station(station_key, emoji, name, col):
     with col:
         data, filename = load_station_data(station_key)
@@ -98,7 +104,7 @@ def render_station(station_key, emoji, name, col):
             st.warning(f"Sem dados da Estação {name}")
             return
 
-        # Verifica horário do arquivo
+        # Verifica o horário do arquivo
         file_dt = get_file_datetime(filename)
         tz_br = pytz.timezone("America/Sao_Paulo")
         now_br = datetime.now(tz_br)
@@ -106,14 +112,14 @@ def render_station(station_key, emoji, name, col):
         file_time_str = ""
 
         if file_dt:
-            # Assume que o horário do arquivo é no timezone Brasil
+            # Converte para timezone Brasil
             file_dt = tz_br.localize(file_dt)
             diff_minutes = (now_br - file_dt).total_seconds() / 60.0
-            delay_ok = diff_minutes <= 30  # True se está dentro de 30 min
+            delay_ok = diff_minutes <= 30  # dentro do limite
             file_time_str = file_dt.strftime("%d/%m/%Y %H:%M")
 
+        # Se o atraso é maior que 30min, mostra ALERTA VERMELHO
         if not delay_ok:
-            # Se está atrasado > 30 min, mostra card vermelho
             last_seen = f"Último dado recebido: {file_time_str}" if file_time_str else "Último horário desconhecido"
             st.markdown(f"""
                 <div style='background-color:#8B0000; color:white; padding:25px; text-align:center; border-radius:12px; font-size:20px;'>
@@ -123,10 +129,11 @@ def render_station(station_key, emoji, name, col):
             """, unsafe_allow_html=True)
             return
 
-        # Exibe dados normalmente
+        # Exibe dados normalmente se está atualizado
         st.markdown(f"<p style='color:white; font-size:13px; text-align:center;'>📄 {filename} <br>🕒 {file_time_str}</p>", unsafe_allow_html=True)
         st.markdown(f"<div class='station-title'>{emoji} {name}</div>", unsafe_allow_html=True)
 
+        # Duas colunas: gases e meteorológicos
         col_gas, col_met = st.columns(2)
 
         with col_gas:
@@ -138,13 +145,12 @@ def render_station(station_key, emoji, name, col):
                     min_val = alert.get("min", -1e9)
                     max_val = alert.get("max", 1e9)
                     alert_class = "alerta" if value < min_val or value > max_val else "normal"
-                    with st.container():
-                        st.markdown(f"""
-                            <div class="metric-box {alert_class}">
-                                <div class="metric-label">{label}</div>
-                                <div class="metric-value">{value:.3f}</div>
-                            </div>
-                        """, unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div class="metric-box {alert_class}">
+                            <div class="metric-label">{label}</div>
+                            <div class="metric-value">{value:.3f}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
 
         with col_met:
             st.subheader("Variáveis Meteorológicas")
@@ -155,15 +161,14 @@ def render_station(station_key, emoji, name, col):
                     min_val = alert.get("min", -1e9)
                     max_val = alert.get("max", 1e9)
                     alert_class = "alerta" if value < min_val or value > max_val else "normal"
-                    with st.container():
-                        st.markdown(f"""
-                            <div class="metric-box {alert_class}">
-                                <div class="metric-label">{label}</div>
-                                <div class="metric-value">{value:.3f}</div>
-                            </div>
-                        """, unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div class="metric-box {alert_class}">
+                            <div class="metric-label">{label}</div>
+                            <div class="metric-value">{value:.3f}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
 
-# Render das estações
+# Render das estações (executa a cada atualização manual)
 render_station("fazenda", "", "Fazenda", col1)
 with col_div:
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
