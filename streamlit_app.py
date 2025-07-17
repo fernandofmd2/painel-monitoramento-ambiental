@@ -7,28 +7,24 @@ import time
 from datetime import datetime, timedelta
 import pytz
 
+# Configuração da página
 st.set_page_config(layout="wide")
 set_style()
 
+# Título fixo
+st.markdown("<div class='title'>🌍 Painel de Monitoramento Ambiental</div>", unsafe_allow_html=True)
+st.markdown("<div class='title-spacer'></div>", unsafe_allow_html=True)
+
+# Ocultar menu padrão do Streamlit
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-    .alert-card {
-        background-color: #8B0000;
-        color: white;
-        text-align: center;
-        font-size: 22px;
-        padding: 30px;
-        border-radius: 10px;
-        font-weight: bold;
-        margin-top: 20px;
-    }
     </style>
 """, unsafe_allow_html=True)
 
-# === INICIALIZAÇÃO DA SESSÃO ===
+# Inicialização da sessão
 if "show_sidebar" not in st.session_state:
     st.session_state.show_sidebar = False
 
@@ -38,40 +34,39 @@ if "alarm_limits" not in st.session_state:
 if "last_refresh_time" not in st.session_state:
     st.session_state.last_refresh_time = time.time()
 
-# === CABEÇALHO ===
-menu_col, title_col, update_col = st.columns([1, 5, 1])
+# Cabeçalho com menu, título e botão atualizar
+menu_col, spacer_col, update_col = st.columns([1, 5, 1])
 
 with menu_col:
     if st.button("☰"):
         st.session_state.show_sidebar = not st.session_state.show_sidebar
-
-with title_col:
-    st.markdown("<div class='title'>🌍 Painel de Monitoramento Ambiental</div>", unsafe_allow_html=True)
 
 with update_col:
     if st.button("🔄 Atualizar agora"):
         st.session_state.last_refresh_time = time.time()
         st.rerun()
 
-# Exibe última atualização (com fuso horário corrigido)
+# Última atualização (com fuso horário Brasil)
 tz = pytz.timezone("America/Sao_Paulo")
 local_time = datetime.fromtimestamp(st.session_state.last_refresh_time, tz)
 dt_str = local_time.strftime("%d/%m/%Y %H:%M:%S")
 st.markdown(f"📅 <b>Última atualização:</b> {dt_str}", unsafe_allow_html=True)
 
-# === SIDEBAR PARA CONFIG ALARMES ===
+# Sidebar de alarmes
 if st.session_state.show_sidebar:
     st.sidebar.header("⚙️ Configurar Alarmes")
     limits = st.session_state.alarm_limits
 
-    for estacao, params in limits.items():
-        st.sidebar.subheader(f"🚩 Limites para {estacao}")
-        for param in params:
-            params[param]["min"] = st.sidebar.number_input(
-                f"{estacao} - {param} mínimo", value=params[param]["min"]
+    for station_name in limits.keys():
+        st.sidebar.subheader(f"Estação {station_name}")
+        for param in limits[station_name]:
+            limits[station_name][param]["min"] = st.sidebar.number_input(
+                f"{station_name} - {param} (mínimo)", 
+                value=limits[station_name][param]["min"]
             )
-            params[param]["max"] = st.sidebar.number_input(
-                f"{estacao} - {param} máximo", value=params[param]["max"]
+            limits[station_name][param]["max"] = st.sidebar.number_input(
+                f"{station_name} - {param} (máximo)", 
+                value=limits[station_name][param]["max"]
             )
 
     if st.sidebar.button("Salvar Configurações"):
@@ -81,78 +76,75 @@ if st.session_state.show_sidebar:
 
 limits = st.session_state.alarm_limits
 
-# === FUNÇÃO PARA CARREGAR DADOS FTP ===
+# Função para carregar dados da estação
 def load_station_data(station_key):
     path, filename = download_latest_file(station_key)
     if not path:
-        return {}, "", None
-    
+        return {}, "", ""
     data = parse_lsi_file(path, station_key)
-    
-    timestamp = None
-    try:
-        # tenta converter nome do arquivo em datetime
-        ts_clean = filename.replace("..lsi", "")
-        parts = ts_clean.split("_")
-        # Exemplo esperado: 17_07_2025_14_11
-        if len(parts) >= 5:
-            day, month, year, hour, minute = parts[:5]
-            timestamp = datetime(int(year), int(month), int(day), int(hour), int(minute))
-    except Exception:
-        timestamp = None
-
+    timestamp = filename.replace("..lsi", "").replace("_", " ", 1).replace("_", ":", 1)
     return data, filename, timestamp
 
-# === LISTAS DE PARÂMETROS ===
+# Listas de parâmetros
 gases_particulas = ["O3", "CO", "SO2", "NO", "NO2", "NOX", "PM10"]
 meteorologicos = ["Temperatura", "Umidade Relativa", "Pressão Atmosférica",
                   "Direção do vento", "Velocidade do vento", "Índice Pluviométrico"]
 
 col1, col_div, col2 = st.columns([1, 0.02, 1])
 
-# === FUNÇÃO PARA RENDERIZAR ESTAÇÃO ===
+# Função para renderizar os dados ou alerta
 def render_station(station_key, emoji, name, col):
     with col:
-        data, filename, timestamp = load_station_data(station_key)
+        data, filename, timestamp_str = load_station_data(station_key)
 
-        # Se não conseguiu carregar nada
-        if not data:
-            st.warning(f"Sem dados da Estação {name}")
+        # Se não há dados ou timestamp
+        if not data or not timestamp_str:
+            st.markdown(
+                f"<div class='alert-card'>Sem novos dados da estação {name}</div>",
+                unsafe_allow_html=True
+            )
             return
 
-        tz = pytz.timezone("America/Sao_Paulo")
-        now = datetime.now(tz)
-
-        # Se timestamp está None ou inválido -> considera atrasado
-        if not timestamp:
-            st.markdown(f"<div class='station-title'>{emoji} {name}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='alert-card'>Sem novos dados da estação {name}</div>", unsafe_allow_html=True)
-            return
-
-        # Se está atrasado >30 minutos
+        # Tenta converter timestamp do nome do arquivo
         try:
-            if now - timestamp > timedelta(minutes=30):
-                st.markdown(f"<div class='station-title'>{emoji} {name}</div>", unsafe_allow_html=True)
-                st.markdown(f"<div class='alert-card'>Sem novos dados da estação {name} há mais de 30 minutos!</div>", unsafe_allow_html=True)
-                return
+            # Formato esperado do arquivo: 17_07_2025 14_11
+            ts_clean = timestamp_str.replace("..lsi", "").replace("_", " ")
+            timestamp = datetime.strptime(ts_clean, "%d %m %Y %H %M")
+
+            # Ajusta para fuso horário SP
+            tz = pytz.timezone("America/Sao_Paulo")
+            timestamp = tz.localize(timestamp)
         except Exception:
-            st.markdown(f"<div class='station-title'>{emoji} {name}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='alert-card'>Sem novos dados da estação {name}</div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='alert-card'>Sem novos dados da estação {name}</div>",
+                unsafe_allow_html=True
+            )
             return
 
-        # Se chegou aqui, está atualizado → mostra normalmente
-        st.markdown(f"<p style='color:white; font-size:13px; text-align:center;'>📄 {filename}<br>🕒 {timestamp.strftime('%d/%m/%Y %H:%M:%S')}</p>", unsafe_allow_html=True)
+        # Verifica se o último dado está atrasado
+        now = datetime.now(pytz.timezone("America/Sao_Paulo"))
+        if now - timestamp > timedelta(minutes=30):
+            st.markdown(
+                f"<div class='alert-card'>Sem novos dados da estação {name} (último às {timestamp.strftime('%H:%M')})</div>",
+                unsafe_allow_html=True
+            )
+            return
+
+        # Se está dentro do tempo, mostra normalmente
+        st.markdown(
+            f"<p style='color:white; font-size:13px; text-align:center;'>📄 {filename}<br>🕒 {timestamp.strftime('%d/%m/%Y %H:%M')}</p>", 
+            unsafe_allow_html=True
+        )
         st.markdown(f"<div class='station-title'>{emoji} {name}</div>", unsafe_allow_html=True)
 
         col_gas, col_met = st.columns(2)
-        est_limits = limits.get(name, {})
 
         with col_gas:
             st.subheader("Gases e Partículas")
             for label in gases_particulas:
                 if label in data:
                     value = data[label]
-                    alert = est_limits.get(label, {})
+                    alert = limits.get(name, {}).get(label, {})
                     min_val = alert.get("min", -1e9)
                     max_val = alert.get("max", 1e9)
                     alert_class = "alerta" if value < min_val or value > max_val else "normal"
@@ -168,7 +160,7 @@ def render_station(station_key, emoji, name, col):
             for label in meteorologicos:
                 if label in data:
                     value = data[label]
-                    alert = est_limits.get(label, {})
+                    alert = limits.get(name, {}).get(label, {})
                     min_val = alert.get("min", -1e9)
                     max_val = alert.get("max", 1e9)
                     alert_class = "alerta" if value < min_val or value > max_val else "normal"
@@ -179,8 +171,8 @@ def render_station(station_key, emoji, name, col):
                         </div>
                     """, unsafe_allow_html=True)
 
-# === RENDERIZA ESTAÇÕES ===
-render_station("fazenda", "", "Fazenda", col1)
+# Render das estações
+render_station("fazenda", "🏡", "Fazenda", col1)
 with col_div:
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-render_station("coca_cola", "", "Coca Cola", col2)
+render_station("coca_cola", "🏭", "Coca Cola", col2)
