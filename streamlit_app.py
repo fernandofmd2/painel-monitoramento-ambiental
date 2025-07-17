@@ -103,24 +103,28 @@ def render_station(station_key, emoji, name, col):
         tz_br = pytz.timezone("America/Sao_Paulo")
         now_br = datetime.now(tz_br)
         delay_ok = False
+        file_time_str = ""
 
         if file_dt:
             # Assume que o horário do arquivo é no timezone Brasil
             file_dt = tz_br.localize(file_dt)
             diff_minutes = (now_br - file_dt).total_seconds() / 60.0
             delay_ok = diff_minutes <= 30  # True se está dentro de 30 min
+            file_time_str = file_dt.strftime("%d/%m/%Y %H:%M")
 
         if not delay_ok:
             # Se está atrasado > 30 min, mostra card vermelho
+            last_seen = f"Último dado recebido: {file_time_str}" if file_time_str else "Último horário desconhecido"
             st.markdown(f"""
-                <div style='background-color:#8B0000; color:white; padding:20px; text-align:center; border-radius:10px; font-size:20px;'>
-                🚨 <b>Sem atualização da Estação {name} há mais de 30 minutos!</b>
+                <div style='background-color:#8B0000; color:white; padding:25px; text-align:center; border-radius:12px; font-size:20px;'>
+                🚨 <b>Sem atualização da Estação {name} há mais de 30 minutos!</b><br><br>
+                ⏳ {last_seen}
                 </div>
             """, unsafe_allow_html=True)
             return
 
         # Exibe dados normalmente
-        st.markdown(f"<p style='color:white; font-size:13px; text-align:center;'>📄 {filename}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:white; font-size:13px; text-align:center;'>📄 {filename} <br>🕒 {file_time_str}</p>", unsafe_allow_html=True)
         st.markdown(f"<div class='station-title'>{emoji} {name}</div>", unsafe_allow_html=True)
 
         col_gas, col_met = st.columns(2)
