@@ -10,15 +10,21 @@ import pytz
 st.set_page_config(layout="wide")
 set_style()
 
-# TÍTULO FIXO
-st.markdown("<div class='title'>🌍 Painel de Monitoramento Ambiental</div>", unsafe_allow_html=True)
-
-# Oculta menu padrão Streamlit
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
+    .alert-card {
+        background-color: #8B0000;
+        color: white;
+        text-align: center;
+        font-size: 22px;
+        padding: 30px;
+        border-radius: 10px;
+        font-weight: bold;
+        margin-top: 20px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -29,38 +35,44 @@ if "show_sidebar" not in st.session_state:
 if "alarm_limits" not in st.session_state:
     st.session_state.alarm_limits = load_limits()
 
-# Guarda o horário da última atualização (inicializa)
 if "last_refresh_time" not in st.session_state:
     st.session_state.last_refresh_time = time.time()
 
-# Cabeçalho com menu e botão atualizar
-menu_col, spacer_col, update_col = st.columns([1, 5, 1])
+# Cabeçalho
+menu_col, title_col, update_col = st.columns([1, 5, 1])
 
 with menu_col:
     if st.button("☰"):
         st.session_state.show_sidebar = not st.session_state.show_sidebar
 
+with title_col:
+    st.markdown("<div class='title'>🌍 Painel de Monitoramento Ambiental</div>", unsafe_allow_html=True)
+
 with update_col:
-    # Atualiza manualmente
     if st.button("🔄 Atualizar agora"):
         st.session_state.last_refresh_time = time.time()
         st.rerun()
 
-# Última atualização (com fuso horário Brasil)
+# Exibe última atualização (com fuso horário corrigido)
 tz = pytz.timezone("America/Sao_Paulo")
 local_time = datetime.fromtimestamp(st.session_state.last_refresh_time, tz)
 dt_str = local_time.strftime("%d/%m/%Y %H:%M:%S")
 st.markdown(f"📅 <b>Última atualização:</b> {dt_str}", unsafe_allow_html=True)
 
-# Sidebar de alarmes
+# Sidebar para limites
 if st.session_state.show_sidebar:
     st.sidebar.header("⚙️ Configurar Alarmes")
     limits = st.session_state.alarm_limits
 
-    for param in limits:
-        st.sidebar.subheader(param)
-        limits[param]["min"] = st.sidebar.number_input(f"{param} - mínimo", value=limits[param]["min"])
-        limits[param]["max"] = st.sidebar.number_input(f"{param} - máximo", value=limits[param]["max"])
+    for estacao, params in limits.items():
+        st.sidebar.subheader(f"🚩 Limites para {estacao}")
+        for param in params:
+            params[param]["min"] = st.sidebar.number_input(
+                f"{estacao} - {param} mínimo", value=params[param]["min"]
+            )
+            params[param]["max"] = st.sidebar.number_input(
+                f"{estacao} - {param} máximo", value=params[param]["max"]
+            )
 
     if st.sidebar.button("Salvar Configurações"):
         save_limits(limits)
@@ -69,79 +81,63 @@ if st.session_state.show_sidebar:
 
 limits = st.session_state.alarm_limits
 
-# Função que carrega dados do FTP
+# Função para carregar dados do FTP
 def load_station_data(station_key):
     path, filename = download_latest_file(station_key)
     if not path:
-        return {}, "", ""
+        return {}, "", "", None
+    
+    # Parse normal
     data = parse_lsi_file(path, station_key)
-    return data, filename
-
-# Função para extrair horário do arquivo .lsi
-def get_file_datetime(filename):
+    
+    # Converte timestamp do nome do arquivo
     try:
-        # Exemplo: 17_07_2025_14_11..lsi
-        parts = filename.replace("..lsi", "").split("_")
-        day, month, year, hour, minute = parts
-        dt = datetime(int(year), int(month), int(day), int(hour), int(minute))
-        return dt
-    except Exception:
-        return None
+        timestamp = datetime.strptime(filename.split(".")[0], "%d_%m_%Y%H_%M")
+    except:
+        # fallback seguro
+        timestamp = datetime.now() - timedelta(hours=1)
 
-# Variáveis
+    return data, filename, timestamp
+
+# Listas de parâmetros
 gases_particulas = ["O3", "CO", "SO2", "NO", "NO2", "NOX", "PM10"]
 meteorologicos = ["Temperatura", "Umidade Relativa", "Pressão Atmosférica",
                   "Direção do vento", "Velocidade do vento", "Índice Pluviométrico"]
 
-# Layout em duas colunas
 col1, col_div, col2 = st.columns([1, 0.02, 1])
 
-# Renderização por estação
 def render_station(station_key, emoji, name, col):
     with col:
-        data, filename = load_station_data(station_key)
+        data, filename, timestamp = load_station_data(station_key)
+        
         if not data:
             st.warning(f"Sem dados da Estação {name}")
             return
-
-        # Verifica o horário do arquivo
-        file_dt = get_file_datetime(filename)
-        tz_br = pytz.timezone("America/Sao_Paulo")
-        now_br = datetime.now(tz_br)
-        delay_ok = False
-        file_time_str = ""
-
-        if file_dt:
-            # Converte para timezone Brasil
-            file_dt = tz_br.localize(file_dt)
-            diff_minutes = (now_br - file_dt).total_seconds() / 60.0
-            delay_ok = diff_minutes <= 30  # dentro do limite
-            file_time_str = file_dt.strftime("%d/%m/%Y %H:%M")
-
-        # Se o atraso é maior que 30min, mostra ALERTA VERMELHO
-        if not delay_ok:
-            last_seen = f"Último dado recebido: {file_time_str}" if file_time_str else "Último horário desconhecido"
-            st.markdown(f"""
-                <div style='background-color:#8B0000; color:white; padding:25px; text-align:center; border-radius:12px; font-size:20px;'>
-                🚨 <b>Sem atualização da Estação {name} há mais de 30 minutos!</b><br><br>
-                ⏳ {last_seen}
-                </div>
-            """, unsafe_allow_html=True)
+        
+        # Tempo atual em SP
+        tz = pytz.timezone("America/Sao_Paulo")
+        now = datetime.now(tz)
+        
+        # Se está atrasado >30 min, mostra ALERTA VERMELHO e não mostra dados
+        if now - timestamp > timedelta(minutes=30):
+            st.markdown(f"<div class='station-title'>{emoji} {name}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='alert-card'>🚨 Sem novos dados da estação <b>{name}</b> há mais de 30 minutos!</div>", unsafe_allow_html=True)
             return
-
-        # Exibe dados normalmente se está atualizado
-        st.markdown(f"<p style='color:white; font-size:13px; text-align:center;'>📄 {filename} <br>🕒 {file_time_str}</p>", unsafe_allow_html=True)
+        
+        # Caso esteja atualizado, renderiza normalmente
+        st.markdown(f"<p style='color:white; font-size:13px; text-align:center;'>📄 {filename}<br>🕒 {timestamp.strftime('%d/%m/%Y %H:%M:%S')}</p>", unsafe_allow_html=True)
         st.markdown(f"<div class='station-title'>{emoji} {name}</div>", unsafe_allow_html=True)
 
-        # Duas colunas: gases e meteorológicos
         col_gas, col_met = st.columns(2)
+
+        est_limits = limits.get(name, {})
 
         with col_gas:
             st.subheader("Gases e Partículas")
             for label in gases_particulas:
                 if label in data:
                     value = data[label]
-                    alert = limits.get(label, {})
+                    alert = est_limits.get(label, {})
                     min_val = alert.get("min", -1e9)
                     max_val = alert.get("max", 1e9)
                     alert_class = "alerta" if value < min_val or value > max_val else "normal"
@@ -157,7 +153,7 @@ def render_station(station_key, emoji, name, col):
             for label in meteorologicos:
                 if label in data:
                     value = data[label]
-                    alert = limits.get(label, {})
+                    alert = est_limits.get(label, {})
                     min_val = alert.get("min", -1e9)
                     max_val = alert.get("max", 1e9)
                     alert_class = "alerta" if value < min_val or value > max_val else "normal"
@@ -168,8 +164,8 @@ def render_station(station_key, emoji, name, col):
                         </div>
                     """, unsafe_allow_html=True)
 
-# Render das estações (executa a cada atualização manual)
-render_station("fazenda", "", "Fazenda", col1)
+# Render das estações normalmente
+render_station("fazenda", "🏡", "Fazenda", col1)
 with col_div:
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-render_station("coca_cola", "", "Coca Cola", col2)
+render_station("coca_cola", "🥤", "Coca Cola", col2)
