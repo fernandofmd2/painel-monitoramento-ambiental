@@ -1,38 +1,47 @@
 import json
 import os
 
-CONFIG_FILE = "data/config.json"
+# Diretório para salvar limites
+LIMITS_DIR = "limits"
+os.makedirs(LIMITS_DIR, exist_ok=True)
 
-# Todos os 13 parâmetros com limites iniciais padrão
+# Arquivos por estação
+FILES = {
+    "Fazenda": os.path.join(LIMITS_DIR, "fazenda_limits.json"),
+    "Coca Cola": os.path.join(LIMITS_DIR, "coca_cola_limits.json"),
+}
+
+# Limites padrão
 DEFAULT_LIMITS = {
     "O3": {"min": 0.0, "max": 200.0},
-    "CO": {"min": 0.0, "max": 10.0},
-    "SO2": {"min": 0.0, "max": 5.0},
-    "NO": {"min": 0.0, "max": 5.0},
-    "NO2": {"min": 0.0, "max": 5.0},
+    "CO": {"min": 0.0, "max": 50.0},
+    "SO2": {"min": 0.0, "max": 20.0},
+    "NO": {"min": 0.0, "max": 10.0},
+    "NO2": {"min": 0.0, "max": 10.0},
     "NOX": {"min": 0.0, "max": 10.0},
     "PM10": {"min": 0.0, "max": 150.0},
     "Temperatura": {"min": -10.0, "max": 50.0},
     "Umidade Relativa": {"min": 0.0, "max": 100.0},
     "Pressão Atmosférica": {"min": 900.0, "max": 1100.0},
-    "Velocidade do vento": {"min": 0.0, "max": 30.0},
     "Direção do vento": {"min": 0.0, "max": 360.0},
-    "Índice Pluviométrico": {"min": 0.0, "max": 100.0}
+    "Velocidade do vento": {"min": 0.0, "max": 50.0},
+    "Índice Pluviométrico": {"min": 0.0, "max": 500.0}
 }
 
 def load_limits():
-    if not os.path.exists(CONFIG_FILE):
-        save_limits(DEFAULT_LIMITS)
-        return DEFAULT_LIMITS
-    with open(CONFIG_FILE, "r") as f:
-        data = json.load(f)
-    # Garante que todos os parâmetros estejam sempre presentes
-    for param in DEFAULT_LIMITS:
-        if param not in data:
-            data[param] = DEFAULT_LIMITS[param]
-    return data
+    """Carrega os limites de todas as estações"""
+    limits = {}
+    for station, filepath in FILES.items():
+        if os.path.exists(filepath):
+            with open(filepath, "r") as f:
+                limits[station] = json.load(f)
+        else:
+            limits[station] = DEFAULT_LIMITS.copy()
+    return limits
 
 def save_limits(limits):
-    os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(limits, f, indent=2)
+    """Salva os limites de cada estação em arquivos separados"""
+    for station, filepath in FILES.items():
+        if station in limits:
+            with open(filepath, "w") as f:
+                json.dump(limits[station], f, indent=4)
