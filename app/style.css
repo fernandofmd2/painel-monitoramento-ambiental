@@ -3,65 +3,72 @@ import streamlit as st
 def set_style():
     st.markdown("""
         <style>
-        body {
+        /* Fundo geral */
+        .main {
             background-color: #111111;
-            color: white;
         }
 
+        /* Título principal */
         .title {
             text-align: center;
-            font-size: 36px;
+            font-size: 38px;
             font-weight: bold;
-            margin-top: -30px;
-            margin-bottom: 10px;
             color: white;
+            margin-top: -40px; /* mais perto do topo */
+            margin-bottom: 10px;
         }
 
+        /* Divisor entre estações */
+        .divider {
+            height: 100%;
+            width: 2px;
+            background-color: #333;
+            margin: auto;
+        }
+
+        /* Caixas de métricas */
+        .metric-box {
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 5px 0;
+            text-align: center;
+            font-size: 18px;
+        }
+        .metric-label {
+            color: #fff;
+            font-weight: bold;
+        }
+        .metric-value {
+            color: #fff;
+            font-size: 22px;
+        }
+
+        /* Valores normais e alerta */
+        .normal {
+            background-color: #228B22 !important; /* verde */
+        }
+        .alerta {
+            background-color: #B22222 !important; /* vermelho */
+        }
+
+        /* Subtítulos das colunas */
+        .block-container h2 {
+            color: #fff;
+            text-align: center;
+        }
+
+        /* Nome da estação */
         .station-title {
             text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            margin-top: 15px;
-            margin-bottom: 15px;
-            color: white;
-        }
-
-        .divider {
-            border-left: 2px solid #666;
-            height: 100%;
-            margin: 0 auto;
-        }
-
-        .metric-box {
-            background: #222;
-            padding: 10px;
-            margin: 6px 0;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .metric-label {
-            font-size: 16px;
-            color: #aaa;
-        }
-
-        .metric-value {
-            font-size: 20px;
+            font-size: 26px;
             font-weight: bold;
             color: white;
+            margin-top: 10px;
+            margin-bottom: 20px;
         }
 
-        .metric-box.alerta {
-            background: #660000;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0%   { box-shadow: 0 0 5px red; }
-            50%  { box-shadow: 0 0 20px red; }
-            100% { box-shadow: 0 0 5px red; }
-        }
-
+        /* Card de alerta */
         .alert-card {
             background-color: #8B0000;
             color: white;
@@ -73,5 +80,14 @@ def set_style():
             margin-top: 20px;
         }
 
+        /* Sidebar */
+        section[data-testid="stSidebar"] {
+            background-color: #222 !important;
+        }
+
+        /* Ocultar menu e footer do streamlit */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
         </style>
     """, unsafe_allow_html=True)
