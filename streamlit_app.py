@@ -14,7 +14,7 @@ set_style()
 st.markdown("<div class='title'>🌍 Painel de Monitoramento Ambiental</div>", unsafe_allow_html=True)
 st.markdown("<div class='title-spacer'></div>", unsafe_allow_html=True)
 
-# Oculta menu e rodapé
+# Ocultar menu/rodapé padrão
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
@@ -23,24 +23,21 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Sessão
+# Sessão inicial
 if "show_sidebar" not in st.session_state:
     st.session_state.show_sidebar = False
 
-if "alarm_limits" not in st.session_state:
-    st.session_state.alarm_limits = load_limits()
-
+# Controle de refresh
 if "last_refresh_time" not in st.session_state:
     st.session_state.last_refresh_time = time.time()
 
-# Atualização automática a cada 5 minutos
-if time.time() - st.session_state.last_refresh_time > 300:
+# Auto-refresh a cada 5 min
+if time.time() - st.session_state.last_refresh_time >= 300:
     st.session_state.last_refresh_time = time.time()
     st.rerun()
 
 # Cabeçalho
 menu_col, spacer_col, update_col = st.columns([1, 5, 1])
-
 with menu_col:
     if st.button("☰"):
         st.session_state.show_sidebar = not st.session_state.show_sidebar
@@ -50,30 +47,57 @@ with update_col:
         st.session_state.last_refresh_time = time.time()
         st.rerun()
 
-# Horário formatado
+# Última atualização formatada
 tz = pytz.timezone("America/Sao_Paulo")
 local_time = datetime.fromtimestamp(st.session_state.last_refresh_time, tz)
 dt_str = local_time.strftime("%d/%m/%Y %H:%M:%S")
 st.markdown(f"📅 <b>Última atualização:</b> {dt_str}", unsafe_allow_html=True)
 
+# Lista de estações para limites separados
+STATIONS = {
+    "fazenda": "Estação Fazenda",
+    "coca_cola": "Estação Coca Cola"
+}
+
 # Sidebar
+station_limits_state = {}
+
 if st.session_state.show_sidebar:
     st.sidebar.header("⚙️ Configurar Alarmes")
-    limits = st.session_state.alarm_limits
 
-    for param in limits:
+    selected_station_key = st.sidebar.selectbox(
+        "Selecione a estação para configurar limites",
+        options=list(STATIONS.keys()),
+        format_func=lambda k: STATIONS[k]
+    )
+
+    # Carrega os limites específicos dessa estação
+    if selected_station_key not in st.session_state:
+        st.session_state[selected_station_key] = load_limits(selected_station_key)
+
+    current_limits = st.session_state[selected_station_key]
+
+    st.sidebar.markdown(f"### {STATIONS[selected_station_key]}")
+
+    for param in current_limits:
         st.sidebar.subheader(param)
-        limits[param]["min"] = st.sidebar.number_input(f"{param} - mínimo", value=limits[param]["min"])
-        limits[param]["max"] = st.sidebar.number_input(f"{param} - máximo", value=limits[param]["max"])
+        current_limits[param]["min"] = st.sidebar.number_input(
+            f"{param} - mínimo",
+            value=current_limits[param]["min"],
+            key=f"{selected_station_key}_{param}_min"
+        )
+        current_limits[param]["max"] = st.sidebar.number_input(
+            f"{param} - máximo",
+            value=current_limits[param]["max"],
+            key=f"{selected_station_key}_{param}_max"
+        )
 
-    if st.sidebar.button("Salvar Configurações"):
-        save_limits(limits)
-        st.sidebar.success("Configurações salvas!")
-        st.session_state.alarm_limits = limits
+    if st.sidebar.button("💾 Salvar Configurações"):
+        save_limits(current_limits, selected_station_key)
+        st.sidebar.success(f"Configurações salvas para {STATIONS[selected_station_key]}!")
+        st.session_state[selected_station_key] = current_limits
 
-limits = st.session_state.alarm_limits
-
-# FTP
+# Função FTP
 def load_station_data(station_key):
     path, filename = download_latest_file(station_key)
     if not path:
@@ -82,8 +106,12 @@ def load_station_data(station_key):
     timestamp = filename.replace("..lsi", "").replace("_", "/", 1).replace("_", ":", 1)
     return data, filename, timestamp
 
+# Parâmetros
 gases_particulas = ["O3", "CO", "SO2", "NO", "NO2", "NOX", "PM10"]
-meteorologicos = ["Temperatura", "Umidade Relativa", "Pressão Atmosférica", "Direção do vento", "Velocidade do vento", "Índice Pluviométrico"]
+meteorologicos = [
+    "Temperatura", "Umidade Relativa", "Pressão Atmosférica",
+    "Direção do vento", "Velocidade do vento", "Índice Pluviométrico"
+]
 
 col1, col_div, col2 = st.columns([1, 0.02, 1])
 
@@ -91,11 +119,14 @@ def render_station(station_key, emoji, name, col):
     with col:
         data, filename, timestamp = load_station_data(station_key)
         if not data:
-            st.warning(f"Sem dados da Estação {name}")
+            st.warning(f"Sem dados da {name}")
             return
 
         st.markdown(f"<p style='color:white; font-size:13px; text-align:center;'>📄 {filename}<br>🕒 {timestamp}</p>", unsafe_allow_html=True)
         st.markdown(f"<div class='station-title'>{emoji} {name}</div>", unsafe_allow_html=True)
+
+        # Carrega limites corretos da estação
+        station_limits = st.session_state.get(station_key, load_limits(station_key))
 
         col_gas, col_met = st.columns(2)
 
@@ -104,36 +135,35 @@ def render_station(station_key, emoji, name, col):
             for label in gases_particulas:
                 if label in data:
                     value = data[label]
-                    alert = limits.get(label, {})
+                    alert = station_limits.get(label, {})
                     min_val = alert.get("min", -1e9)
                     max_val = alert.get("max", 1e9)
                     alert_class = "alerta" if value < min_val or value > max_val else "normal"
-                    with st.container():
-                        st.markdown(f"""
-                            <div class="metric-box {alert_class}">
-                                <div class="metric-label">{label}</div>
-                                <div class="metric-value">{value:.3f}</div>
-                            </div>
-                        """, unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div class="metric-box {alert_class}">
+                            <div class="metric-label">{label}</div>
+                            <div class="metric-value">{value:.3f}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
 
         with col_met:
             st.subheader("Variáveis Meteorológicas")
             for label in meteorologicos:
                 if label in data:
                     value = data[label]
-                    alert = limits.get(label, {})
+                    alert = station_limits.get(label, {})
                     min_val = alert.get("min", -1e9)
                     max_val = alert.get("max", 1e9)
                     alert_class = "alerta" if value < min_val or value > max_val else "normal"
-                    with st.container():
-                        st.markdown(f"""
-                            <div class="metric-box {alert_class}">
-                                <div class="metric-label">{label}</div>
-                                <div class="metric-value">{value:.3f}</div>
-                            </div>
-                        """, unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div class="metric-box {alert_class}">
+                            <div class="metric-label">{label}</div>
+                            <div class="metric-value">{value:.3f}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
 
-render_station("fazenda", "", "Fazenda", col1)
+# Render
+render_station("fazenda", "", "Estação Fazenda", col1)
 with col_div:
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-render_station("coca_cola", "", "Coca Cola", col2)
+render_station("coca_cola", "", "Estação Coca Cola", col2)
