@@ -1,10 +1,10 @@
 import json
 import os
 
-# Caminho base para salvar limites
+# Pasta onde ficam os arquivos de limites por estação
 BASE_PATH = "data/limits"
 
-# Lista de parâmetros monitorados
+# Valores padrão para todos os parâmetros
 PARAMS_DEFAULTS = {
     "O3": {"min": 0.0, "max": 200.0},
     "CO": {"min": 0.0, "max": 200.0},
@@ -31,7 +31,7 @@ def load_limits(station_key: str):
     """Carrega os limites específicos de uma estação"""
     filepath = _get_station_file(station_key)
     if not os.path.exists(filepath):
-        # Cria arquivo com defaults
+        # Se não existe, cria com defaults
         save_limits(PARAMS_DEFAULTS, station_key)
         return PARAMS_DEFAULTS.copy()
     with open(filepath, "r") as f:
