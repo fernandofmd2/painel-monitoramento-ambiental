@@ -11,7 +11,7 @@ st.set_page_config(layout="wide")
 set_style()
 
 # TÍTULO FIXO + espaçador
-st.markdown("<div class='title'>🌍 Painel de Monitoramento Ambiental</div>", unsafe_allow_html=True)
+st.markdown("<div class='title'>Painel de Monitoramento Ambiental</div>", unsafe_allow_html=True)
 st.markdown("<div class='title-spacer'></div>", unsafe_allow_html=True)
 
 # Ocultar menu/rodapé padrão
@@ -55,8 +55,8 @@ st.markdown(f"📅 <b>Última atualização:</b> {dt_str}", unsafe_allow_html=Tr
 
 # Lista de estações para limites separados
 STATIONS = {
-    "fazenda": "Estação Fazenda",
-    "coca_cola": "Estação Coca Cola"
+    "fazenda": "Estação Bom Retiro",
+    "coca_cola": "Estação Porto Real"
 }
 
 # Sidebar
@@ -160,7 +160,7 @@ def render_station(station_key, emoji, name, col):
                         </div>
                     """, unsafe_allow_html=True)
 
-render_station("fazenda", "", "Estação Fazenda", col1)
+render_station("fazenda", "", "Estação Bom Retiro", col1)
 with col_div:
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-render_station("coca_cola", "", "Estação Coca Cola", col2)
+render_station("coca_cola", "", "Estação Porto Real", col2)
