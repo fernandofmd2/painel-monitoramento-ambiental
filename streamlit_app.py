@@ -101,7 +101,7 @@ def load_station_data(station_key):
     if not path:
         return {}, "", ""
     data = parse_lsi_file(path, station_key)
-    timestamp = filename.replace("..lsi", "").replace("_", "/", 1).replace("_", ":", 1)
+    timestamp = filename.replace(".lsi", "").replace("_", "/", 1).replace("_", ":", 1)
     return data, filename, timestamp
 
 # Parâmetros
