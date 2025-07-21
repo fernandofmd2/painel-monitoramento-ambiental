@@ -1,59 +1,65 @@
-import os
 from ftplib import FTP
-from datetime import datetime
+import os
 
 FTP_HOST = "3.138.161.165"
-FTP_USER = os.getenv("FTP_USER")
-FTP_PASS = os.getenv("FTP_PASS")
+FTP_USER = "guardian-rj"
+FTP_PASS = "guardian.aires2025"
 
-paths = {
+# Mapeamento das estações e diretórios remotos
+STATIONS = {
     "fazenda": "Bom_Retiro",
     "coca_cola": "Porto_Real"
 }
 
-LOCAL_DIR = "data/downloads"
+# Pasta local onde os arquivos baixados serão salvos
+DOWNLOAD_DIR = "data/downloads"
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
+def get_latest_file(ftp, directory):
+    """Obtém o último arquivo mais recente pela data de modificação do FTP"""
+    ftp.cwd(directory)
+    file_list = ftp.nlst()
+
+    if not file_list:
+        return None
+
+    # Pega a data/hora de modificação (MDTM)
+    files_with_dates = []
+    for filename in file_list:
+        try:
+            modified_time = ftp.sendcmd(f"MDTM {filename}")[4:].strip()  # formato YYYYMMDDHHMMSS
+            files_with_dates.append((filename, modified_time))
+        except:
+            pass  # Ignora se não conseguir pegar a data
+
+    if not files_with_dates:
+        return sorted(file_list)[-1]  # fallback: pega o último por ordem alfabética
+
+    # Ordena pela data mais recente
+    latest_file = sorted(files_with_dates, key=lambda x: x[1], reverse=True)[0][0]
+    return latest_file
 
 def download_latest_file(station_key):
-    try:
-        remote_dir = paths.get(station_key)
-        if not remote_dir:
-            print(f"[ERRO] Estação '{station_key}' não está mapeada no dicionário de paths.")
-            return None, None
-
-        ftp = FTP(FTP_HOST)
-        ftp.login(FTP_USER, FTP_PASS)
-        ftp.cwd(remote_dir)
-
-        files = [f for f in ftp.nlst() if f.endswith(".lsi")]
-
-        if not files:
-            print(f"[{station_key.upper()}] Nenhum arquivo .lsi encontrado no diretório '{remote_dir}'")
-            return None, None
-
-        files.sort(key=lambda name: get_datetime_from_filename(name), reverse=True)
-        latest_file = files[0]
-
-        local_path = os.path.join(LOCAL_DIR, station_key)
-        os.makedirs(local_path, exist_ok=True)
-        local_file_path = os.path.join(local_path, latest_file)
-
-        with open(local_file_path, "wb") as f:
-            ftp.retrbinary(f"RETR " + latest_file, f.write)
-
-        ftp.quit()
-
-        print(f"[{station_key.upper()}] ✔ Arquivo baixado: {latest_file}")
-        print(f"[{station_key.upper()}] ✔ Caminho local salvo: {local_file_path}")
-
-        return local_file_path, latest_file
-
-    except Exception as e:
-        print(f"[ERRO] Durante download da estação '{station_key}': {e}")
+    """Baixa o último arquivo mais recente para a estação especificada"""
+    if station_key not in STATIONS:
         return None, None
 
-def get_datetime_from_filename(filename):
-    try:
-        base = filename.split("..")[0]
-        return datetime.strptime(base, "%d_%m_%Y %H_%M")
-    except Exception:
-        return datetime.min
+    remote_dir = STATIONS[station_key]
+    local_station_dir = os.path.join(DOWNLOAD_DIR, station_key)
+    os.makedirs(local_station_dir, exist_ok=True)
+
+    with FTP(FTP_HOST) as ftp:
+        ftp.login(FTP_USER, FTP_PASS)
+
+        # Obtém o último arquivo modificado
+        latest_filename = get_latest_file(ftp, remote_dir)
+        if not latest_filename:
+            return None, None
+
+        local_path = os.path.join(local_station_dir, latest_filename)
+
+        # Baixa o arquivo
+        with open(local_path, "wb") as f:
+            ftp.retrbinary(f"RETR {remote_dir}/{latest_filename}", f.write)
+
+        return local_path, latest_filename
