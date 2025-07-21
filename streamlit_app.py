@@ -7,7 +7,6 @@ import time
 from datetime import datetime
 import pytz
 
-# Configuração da página
 st.set_page_config(layout="wide")
 set_style()
 
@@ -19,7 +18,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Inicialização da sessão
+# Inicialização de sessão
 if "show_sidebar" not in st.session_state:
     st.session_state.show_sidebar = False
 
@@ -50,25 +49,22 @@ local_time = datetime.fromtimestamp(st.session_state.last_refresh_time, tz)
 dt_str = local_time.strftime("%d/%m/%Y %H:%M:%S")
 st.markdown(f"📅 <b>Última atualização:</b> {dt_str}", unsafe_allow_html=True)
 
-# Sidebar de alarmes
+# Sidebar de alarmes (com limites por estação)
 if st.session_state.show_sidebar:
     st.sidebar.header("⚙️ Configurar Alarmes")
     limits = st.session_state.alarm_limits
 
-    # Loop para exibir as estações separadamente
-    for station_name in ["Fazenda", "Coca Cola"]:
+    for station_name in limits.keys():
         st.sidebar.subheader(f"Estação {station_name}")
-        station_limits = limits.get(station_name, {})
-        for param in station_limits.keys():
-            station_limits[param]["min"] = st.sidebar.number_input(
+        for param in limits[station_name]:
+            limits[station_name][param]["min"] = st.sidebar.number_input(
                 f"{station_name} - {param} (mínimo)",
-                value=station_limits[param]["min"]
+                value=limits[station_name][param]["min"]
             )
-            station_limits[param]["max"] = st.sidebar.number_input(
+            limits[station_name][param]["max"] = st.sidebar.number_input(
                 f"{station_name} - {param} (máximo)",
-                value=station_limits[param]["max"]
+                value=limits[station_name][param]["max"]
             )
-        limits[station_name] = station_limits
 
     if st.sidebar.button("Salvar Configurações"):
         save_limits(limits)
@@ -77,13 +73,12 @@ if st.session_state.show_sidebar:
 
 limits = st.session_state.alarm_limits
 
-# Função para carregar dados da estação
+# Sempre recarrega dados do FTP
 def load_station_data(station_key):
     path, filename = download_latest_file(station_key)
     if not path:
         return {}, "", ""
     data = parse_lsi_file(path, station_key)
-    # Agora só remove .lsi (1 ponto)
     timestamp = filename.replace(".lsi", "").replace("_", "/", 1).replace("_", ":", 1)
     return data, filename, timestamp
 
@@ -93,7 +88,6 @@ meteorologicos = ["Temperatura", "Umidade Relativa", "Pressão Atmosférica",
 
 col1, col_div, col2 = st.columns([1, 0.02, 1])
 
-# Função para renderizar a estação
 def render_station(station_key, emoji, name, col):
     with col:
         data, filename, timestamp = load_station_data(station_key)
